@@ -1,0 +1,5 @@
+set ansi_padding off
+set ansi_padding ON
+set ansi_padding on set ansi_padding off
+set ansi_padding on
+SET ANSI_PADDING OFF
