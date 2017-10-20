@@ -14,7 +14,9 @@ class Engine(IterableQueue):
         self.processed   = IterableQueue()
         self.num_cores   = os.cpu_count()
         #fix this, make it more dynamic
-        self.regex = re.compile(r"(set\s*ansi_padding\s*off)", flags=re.IGNORECASE)
+        self.regex = re.compile(b"(set\s*ansi_padding\s*off)", flags=re.IGNORECASE)
+        self.replacement = b'SET ANSI_PADDING ON'
+
 
     def __getBytesFromFile__(self, filename=None):
         if filename is not None:
@@ -23,10 +25,18 @@ class Engine(IterableQueue):
         else:
             return None
 
+    def __hashContents__(self, bytesToHash=None):
+        if bytesToHash is not None:
+            return hashlib.sha512(bytesToHash).hexdigest()
+        else:
+            return None
+
     def __enumerateFiles__(self, dirs=[], extension='*.sch'):
         files = set()
         for dir in dirs:
             #TODO: multi-thread this?
+            #TODO: deal with how to have distinct files, a topleveldir method to 
+            # only iterate through unique top level directories?
             filesInCurDir = (file for file in pathlib.Path(dir).rglob(extension) if file.is_file())
             for file in filesInCurDir:
                 files.add(file)
@@ -40,12 +50,6 @@ class Engine(IterableQueue):
             yield from (item for item in source)
         else:
             return None
-
-    def __hashContents__(self, bytesToHash=None):
-        if bytesToHash is not None:
-            return hashlib.sha512(bytesToHash).hexdigest()
-        else:
-            return None
     
     def __getEncoding__(self, filename=None):
         if file is not None:
@@ -54,8 +58,11 @@ class Engine(IterableQueue):
         else:
             return None
     
-    #implement the clean function to replace the lines in question
-
+    def __findAndReplace__(self, contents=None, search=self.regex, replacement=self.replacement):
+        if all(contents,search,replacement):
+            return re.sub(search, contents, replacement) 
+        else:
+            return None 
 
     def __setup__(self, *args, **kwargs):
         files = self.__enumerateFiles__(dirs=kwargs['directories'])
